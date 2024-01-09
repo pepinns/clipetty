@@ -84,7 +84,7 @@ support base64 encoded strings of up to 74,994 bytes long.")
 (defconst clipetty--dcs-end "\e\\"
   "The end DCS escape sequence that everyone recognizes.")
 
-(defconst clipetty--osc-start "\e]52;c;"
+(defconst clipetty--osc-start "\e]1337;Copy=:"
   "The initial OSC 52 escape sequence.")
 
 (defconst clipetty--osc-end "\a"
@@ -97,7 +97,7 @@ Return nil if tmux is unable to locate the environment variable"
     (if (and tmux-ssh-tty
              (string-match clipetty-tmux-ssh-tty-regexp tmux-ssh-tty))
         (match-string 1 tmux-ssh-tty)
-    nil)))
+      nil)))
 
 (defun clipetty--tty (ssh-tty tmux)
   "Return which TTY we should send our OSC payload to.
@@ -141,12 +141,7 @@ Optionally base64 encode it first if you specify non-nil for ENCODE."
         (term    (getenv "TERM" (selected-frame)))
         (ssh-tty (getenv "SSH_TTY" (selected-frame))))
     (if (<= (length string) clipetty--max-cut)
-        (write-region
-         (clipetty--dcs-wrap string tmux term ssh-tty)
-         nil
-         (clipetty--tty ssh-tty tmux)
-         t
-         0)
+        (send-string-to-terminal (clipetty--dcs-wrap string tmux term ssh-tty)  )
       (message "Selection too long to send to terminal %d" (length string))
       (sit-for 1))))
 
@@ -160,7 +155,6 @@ the original `interprogram-cut-function' that we're advising."
     ;; simply ignore this.
     ;;
     ;; TODO: Support longer than `clipetty--max-cut' length messages in Kitty.
-    (clipetty--emit (clipetty--osc "!"))
     (clipetty--emit (clipetty--osc string t)))
   ;; Always chain to the original cut function.
   (funcall orig-fun string))
